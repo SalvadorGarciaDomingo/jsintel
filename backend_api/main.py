@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.config import get_settings
-from routers import search, ai, health
+from backend_api.core.config import get_settings
+from backend_api.routers import search, ai, health
 
 settings = get_settings()
 
