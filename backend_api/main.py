@@ -1,29 +1,32 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend_api.core.config import get_settings
-from backend_api.routers import search, ai, health
-
-settings = get_settings()
+from backend_api_prod.core.config import settings
+from backend_api_prod.routers import health, search, ai
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    version=settings.VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    version=settings.PROJECT_VERSION,
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
 # CORS Configuration
+# Production: strict allow list
+# Local/Dev: might need more permissiveness (but adhering to prod reqs for now)
+origins = settings.BACKEND_CORS_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=[str(origin) for origin in origins],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_headers=["*"],
 )
 
-# Routers
-app.include_router(health.router, tags=["Health"])
-app.include_router(search.router, prefix="/search", tags=["Search"])
-app.include_router(ai.router, prefix="/ai", tags=["AI Analysis"])
+# Include Routers
+app.include_router(health.router)
+app.include_router(search.router)
+app.include_router(ai.router)
 
 if __name__ == "__main__":
     import uvicorn

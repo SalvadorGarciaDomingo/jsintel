@@ -1,35 +1,50 @@
 from pydantic_settings import BaseSettings
+from typing import List, Optional
 from functools import lru_cache
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Vysion OSINT API"
+    PROJECT_NAME: str = "SJ INTEL OSINT API"
     VERSION: str = "2.0.0"
     API_V1_STR: str = "/api/v1"
     
-    # Security & CORS
-    BACKEND_CORS_ORIGINS: list = [
-        "http://localhost:8000",
+    # Environment
+    ENVIRONMENT: str = "production"
+    
+    # CORS (Strict as requested)
+    BACKEND_CORS_ORIGINS: List[str] = [
         "https://sjintel.com",
-        "https://www.sjintel.com",
-        "http://localhost:5500", # Dev Local Frontend
-        "http://127.0.0.1:5500"
+        "https://www.sjintel.com"
     ]
 
-    # External APIs
-    GITHUB_TOKEN: str = ""
-    DEEPWEB_API_KEY: str = ""
-    DEEPWEB_API_URL: str = "https://academic-deepweb-api.example.com/v1"
+    # Security
+    SECRET_KEY: str = "changeme_in_production"
     
-    # AI Configuration
-    AI_PROVIDER: str = "mock" # options: "openai", "anthropic", "mock"
-    OPENAI_API_KEY: str = ""
-    ANTHROPIC_API_KEY: str = ""
+    # --- REAL API KEYS (Must be set in Render Env Vars) ---
     
-    # Deployment
-    ENVIRONMENT: str = "development"
+    # IA
+    GOOGLE_API_KEY: str # Required
+    AI_MODEL: str = "gemini-2.0-flash"
+    
+    # OSINT Services
+    VYSION_API_KEY: str # Required
+    VIRUSTOTAL_API_KEY: str # Required
+    HIBP_API_KEY: str # Required
+    URLSCAN_API_KEY: str # Required
+    ABUSEIPDB_API_KEY: str # Required
+    
+    # Recommended / Optional (Defaults to empty string if not set, but better to force them if critical)
+    # Keeping them optional to avoid crash if user forgets purely optional ones, 
+    # but the core ones above are marked required (no default value)
+    SHODAN_API_KEY: Optional[str] = ""
+    HUNTER_API_KEY: Optional[str] = ""
+    GITHUB_TOKEN: Optional[str] = ""
+    
+    # Discord
+    DISCORD_BOT_TOKEN: Optional[str] = ""
 
     class Config:
         env_file = ".env"
+        case_sensitive = True
 
 @lru_cache()
 def get_settings():
