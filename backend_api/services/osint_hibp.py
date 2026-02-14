@@ -1,6 +1,6 @@
 import httpx
 from typing import Dict, Any
-from backend_api_prod.core.config import settings
+from backend_api.core.config import settings
 
 class ServicioHIBP:
     """

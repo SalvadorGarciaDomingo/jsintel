@@ -2,7 +2,7 @@ import re
 import dns.resolver
 from typing import Dict, Any
 from concurrent.futures import ThreadPoolExecutor
-from backend_api_prod.services.osint_hibp import ServicioHIBP
+from backend_api.services.osint_hibp import ServicioHIBP
 # Holehe integration would go here if available, keeping simplified for now ensuring robust imports
 
 class ServicioEmail:

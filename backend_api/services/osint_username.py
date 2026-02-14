@@ -1,7 +1,7 @@
 import requests
 from typing import Dict, Any, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from backend_api_prod.services.osint_hibp import ServicioHIBP
+from backend_api.services.osint_hibp import ServicioHIBP
 
 class ServicioUsuario:
     SITIOS = {

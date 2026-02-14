@@ -1,7 +1,7 @@
 import vysion
 from vysion import client
 from typing import Dict, Any, List
-from backend_api_prod.core.config import settings
+from backend_api.core.config import settings
 
 class ServicioVysion:
     def __init__(self):

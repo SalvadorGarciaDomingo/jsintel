@@ -1,6 +1,6 @@
 import requests
 from typing import Dict, Any
-from backend_api_prod.core.config import settings
+from backend_api.core.config import settings
 
 class ServicioIP:
     BASE_URL = "http://ip-api.com/json/"

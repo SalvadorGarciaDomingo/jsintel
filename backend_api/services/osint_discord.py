@@ -2,7 +2,7 @@ import requests
 from typing import Dict, Any
 import re
 from datetime import datetime
-from backend_api_prod.core.config import settings
+from backend_api.core.config import settings
 
 class ServicioDiscord:
     API_BASE = "https://discord.com/api/v10"
