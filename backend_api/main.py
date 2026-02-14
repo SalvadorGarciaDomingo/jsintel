@@ -5,7 +5,7 @@ from backend_api.routers import health, search, ai
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    version=settings.PROJECT_VERSION,
+    version=settings.VERSION,
     docs_url="/docs",
     redoc_url="/redoc"
 )
