@@ -113,6 +113,12 @@ class AnalysisEngine:
         # 4. Enriquecimiento Global (CTI, Vysion) sobre el objetivo principal
         # Solo lo hacemos para el objetivo input real para ahorrar cuota
         cti_global = self.servicios['cti'].verificar_agente_malicioso(objetivo_inicial)
+        resultados_raw['cti'] = cti_global
+        try:
+            vysion_global = self.servicios['vysion'].analizar(objetivo_inicial)
+            resultados_raw['vysion'] = vysion_global
+        except Exception as _:
+            resultados_raw['vysion'] = {"exito": False, "error": "Vysion error"}
         
         # 5. Correlación Final
         resultados_check = {'desglose': desglose_final}
@@ -131,12 +137,67 @@ class AnalysisEngine:
             # Por simplicidad en este paso, asumimos llamadas directas rápidas o bloqueantes
             svc_res = None
             
-            if tipo == 'ip': svc_res = self.servicios['ip'].analizar(valor)
-            elif tipo == 'domain': svc_res = self.servicios['domain'].analizar(valor)
-            elif tipo == 'email': svc_res = self.servicios['email'].analizar(valor)
-            elif tipo == 'user': svc_res = self.servicios['user'].analizar(valor)
-            elif tipo == 'phone': svc_res = self.servicios['phone'].analizar(valor)
-            # ... otros ...
+            if tipo == 'ip':
+                ip_res = self.servicios['ip'].analizar(valor)
+                vt_res = self.servicios['virustotal'].analizar(valor, 'ip')
+                svc_res = {
+                    "exito": ip_res.get('exito', False) or vt_res.get('exito', False),
+                    "datos": {
+                        "ip_api": ip_res.get('datos', {}),
+                        "virustotal": vt_res.get('datos', {})
+                    },
+                    "error": ip_res.get('error') or vt_res.get('error')
+                }
+            elif tipo == 'domain':
+                dom_res = self.servicios['domain'].analizar(valor)
+                vt_res = self.servicios['virustotal'].analizar(valor, 'domain')
+                svc_res = {
+                    "exito": dom_res.get('exito', False) or vt_res.get('exito', False),
+                    "datos": {
+                        "dominio": dom_res.get('datos', {}),
+                        "virustotal": vt_res.get('datos', {})
+                    },
+                    "error": dom_res.get('error') or vt_res.get('error')
+                }
+            elif tipo == 'url':
+                us_res = self.servicios['urlscan'].analizar(valor)
+                vt_res = self.servicios['virustotal'].analizar(valor, 'url')
+                svc_res = {
+                    "exito": us_res.get('exito', False) or vt_res.get('exito', False),
+                    "datos": {
+                        "urlscan": us_res.get('datos', {}),
+                        "virustotal": vt_res.get('datos', {})
+                    },
+                    "error": us_res.get('error') or vt_res.get('error')
+                }
+            elif tipo == 'email':
+                em_res = self.servicios['email'].analizar(valor)
+                svc_res = em_res
+            elif tipo == 'user':
+                us_res = self.servicios['user'].analizar(valor)
+                dc_res = self.servicios['discord'].analizar_usuario(valor)
+                svc_res = {
+                    "exito": us_res.get('exito', False) or dc_res.get('exito', False),
+                    "datos": {
+                        "username": us_res.get('datos', {}),
+                        "discord": dc_res.get('datos', {})
+                    },
+                    "error": us_res.get('error') or dc_res.get('error')
+                }
+            elif tipo == 'phone':
+                ph_res = self.servicios['phone'].analizar(valor)
+                svc_res = ph_res
+            elif tipo == 'discord':
+                if 'discord.gg' in valor or 'discordapp.com/invite' in valor:
+                    dc = self.servicios['discord'].analizar_invitacion(valor)
+                elif valor.isdigit():
+                    dc = self.servicios['discord'].analizar_usuario_id(valor)
+                else:
+                    dc = self.servicios['discord'].analizar_usuario(valor)
+                svc_res = dc
+            elif tipo == 'wallet':
+                wl_res = self.servicios['wallet'].analizar(valor)
+                svc_res = wl_res
 
             if svc_res:
                 return {
