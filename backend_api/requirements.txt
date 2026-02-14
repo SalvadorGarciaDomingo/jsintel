@@ -14,4 +14,4 @@ whois==0.9.27
 google-generativeai==0.3.2
 python-docx==1.1.0
 trio==0.24.0
-vysion==0.0.5 # Assuming this version or verifying availability
+vysion==2.2.2 # Assuming this version or verifying availability
