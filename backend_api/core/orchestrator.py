@@ -4,24 +4,24 @@ from typing import Dict, Any, List
 from collections import deque
 
 # Importaciones de Módulos (Production Path)
-from backend_api_prod.core.extractor import ExtractorIdentificadores
-from backend_api_prod.core.heuristic import HeuristicIntelligence
-from backend_api_prod.core.correlation import Correlador
-from backend_api_prod.core.ai_client import AIIdentityAnalyst, RateLimiter
+from backend_api.core.extractor import ExtractorIdentificadores
+from backend_api.core.heuristic import HeuristicIntelligence
+from backend_api.core.correlation import Correlador
+from backend_api.core.ai_client import AIIdentityAnalyst, RateLimiter
 
 # Servicios
-from backend_api_prod.services.osint_ip import ServicioIP
-from backend_api_prod.services.osint_domain import ServicioDominio
-from backend_api_prod.services.osint_email import ServicioEmail
-from backend_api_prod.services.osint_username import ServicioUsuario
-from backend_api_prod.services.osint_phone import ServicioTelefono
+from backend_api.services.osint_ip import ServicioIP
+from backend_api.services.osint_domain import ServicioDominio
+from backend_api.services.osint_email import ServicioEmail
+from backend_api.services.osint_username import ServicioUsuario
+from backend_api.services.osint_phone import ServicioTelefono
 # from backend_api_prod.services.osint_image import ServicioImagen # On demand only
-from backend_api_prod.services.osint_discord import ServicioDiscord
-from backend_api_prod.services.osint_wallet import ServicioWallet
-from backend_api_prod.services.cti_feeds import ServicioCTI
-from backend_api_prod.services.osint_vysion import ServicioVysion
-from backend_api_prod.services.osint_urlscan import ServicioUrlscan
-from backend_api_prod.services.osint_virustotal import ServicioVirusTotal
+from backend_api.services.osint_discord import ServicioDiscord
+from backend_api.services.osint_wallet import ServicioWallet
+from backend_api.services.cti_feeds import ServicioCTI
+from backend_api.services.osint_vysion import ServicioVysion
+from backend_api.services.osint_urlscan import ServicioUrlscan
+from backend_api.services.osint_virustotal import ServicioVirusTotal
 
 class AnalysisEngine:
     """

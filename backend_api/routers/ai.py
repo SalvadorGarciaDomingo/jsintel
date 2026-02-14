@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from backend_api_prod.models.api_models import AIAnalysisRequest, AIAnalysisResponse
-from backend_api_prod.core.ai_client import AIIdentityAnalyst
+from backend_api.models.api_models import AIAnalysisRequest, AIAnalysisResponse
+from backend_api.core.ai_client import AIIdentityAnalyst
 
 router = APIRouter(prefix="/api/v1/ai", tags=["AI"])
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
-from backend_api_prod.models.api_models import SearchRequest, SearchResponse
-from backend_api_prod.core.orchestrator import AnalysisEngine
+from backend_api.models.api_models import SearchRequest, SearchResponse
+from backend_api.core.orchestrator import AnalysisEngine
 import uuid
 from datetime import datetime
 

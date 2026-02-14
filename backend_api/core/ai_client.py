@@ -5,7 +5,7 @@ import base64
 import os
 import random
 import threading
-from backend_api_prod.core.config import get_settings
+from backend_api.core.config import get_settings
 
 settings = get_settings()
 
