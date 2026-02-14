@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend_api_prod.core.config import settings
-from backend_api_prod.routers import health, search, ai
+from backend_api.core.config import settings
+from backend_api.routers import health, search, ai
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
