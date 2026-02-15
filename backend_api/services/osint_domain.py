@@ -67,6 +67,20 @@ class ServicioDominio:
             res["http_headers"] = {k:v for k,v in resp.headers.items() if k.lower() in ['server', 'x-powered-by']}
             res["cookies"] = [{"nombre": c.name, "domain": c.domain} for c in resp.cookies]
         except: pass
+        try:
+            rbt = requests.get(f"https://{dominio}/robots.txt", timeout=6, headers={'User-Agent': 'Mozilla/5.0'})
+            if rbt.status_code == 200 and rbt.text:
+                res["robots_txt"] = {"url": f"https://{dominio}/robots.txt", "contenido": rbt.text}
+        except: pass
+        try:
+            sec = requests.get(f"https://{dominio}/.well-known/security.txt", timeout=6, headers={'User-Agent': 'Mozilla/5.0'})
+            if sec.status_code == 200 and sec.text:
+                res["security_txt"] = {"url": f"https://{dominio}/.well-known/security.txt", "contenido": sec.text}
+            else:
+                sec2 = requests.get(f"https://{dominio}/security.txt", timeout=6, headers={'User-Agent': 'Mozilla/5.0'})
+                if sec2.status_code == 200 and sec2.text:
+                    res["security_txt"] = {"url": f"https://{dominio}/security.txt", "contenido": sec2.text}
+        except: pass
         return res
 
     def _scrape_homepage(self, dominio: str) -> Dict[str, Any]:

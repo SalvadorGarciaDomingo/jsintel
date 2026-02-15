@@ -56,6 +56,7 @@ class AnalysisEngine:
         resultados_raw = {}
         cola_analisis = deque()
         procesados = set() # Evitar bucles
+        resultados_raw['emails'] = []
         
         # 1. Encolar Objetivo Inicial
         cola_analisis.append({
@@ -95,6 +96,9 @@ class AnalysisEngine:
             # Guardar en resultados
             if depth == 0:
                 if tipo not in resultados_raw: resultados_raw[tipo] = resultado_item
+            else:
+                if tipo == 'email':
+                    resultados_raw['emails'].append(resultado_item)
             
             desglose_final.append(resultado_item)
 
@@ -225,5 +229,11 @@ class AnalysisEngine:
         if tipo == 'domain':
             for email in datos.get('correos_relacionados', []):
                 nuevos.append({'tipo': 'email', 'valor': email})
+        if tipo == 'user':
+            usr = datos.get('username', {})
+            vip = usr.get('vysion_im_profiles', {})
+            for h in vip.get('hits', []):
+                for e in h.get('email', []):
+                    nuevos.append({'tipo': 'email', 'valor': e})
         
         return nuevos
