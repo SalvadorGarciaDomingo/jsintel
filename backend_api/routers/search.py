@@ -16,7 +16,10 @@ async def perform_search(request: SearchRequest):
         tipo = request.tipo
         if not tipo:
             objetivo = (request.objetivo or "").strip()
-            objetivo_lower = objetivo.lower()
+            objetivo_lower = objetivo.lower().strip()
+            objetivo_lower = objetivo_lower.rstrip("/")
+            if objetivo_lower.startswith("www."):
+                objetivo_lower = objetivo_lower[4:]
             tipo = "user"
             if "@" in objetivo:
                 tipo = "email"
@@ -25,7 +28,7 @@ async def perform_search(request: SearchRequest):
             else:
                 import re
                 ipv4_regex = r"^(?:\d{1,3}\.){3}\d{1,3}$"
-                domain_regex = r"^(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}$"
+                domain_regex = r"^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}$"
                 phone_regex = r"^\+?\d{7,15}$"
                 if re.match(ipv4_regex, objetivo_lower):
                     tipo = "ip"
