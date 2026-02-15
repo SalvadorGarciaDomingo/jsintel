@@ -30,7 +30,7 @@ class ServicioUsuario:
                 if f.result(): results = resultados.append(f.result())
         
         hibp_data = ServicioHIBP().sync_check_account(usuario)
-        profiles = {"total": 0, "hits": []}
+        profiles = {"total": 0, "hits": [], "error": None}
         try:
             if self.vysion and hasattr(self.vysion, "search_im_profiles"):
                 res = self.vysion.search_im_profiles(q=usuario, gte=None, lte=None)
@@ -103,9 +103,18 @@ class ServicioUsuario:
                         "ripple_address": ripple,
                         "zcash_address": zcash
                     })
-                profiles = {"total": len(hits_out), "hits": hits_out}
-        except:
-            profiles = {"total": 0, "hits": []}
+                profiles = {"total": len(hits_out), "hits": hits_out, "error": None}
+                # Intentar capturar error del objeto si existe
+                err = getattr(res, "error", None)
+                if err:
+                    try:
+                        code = getattr(err, "code", None)
+                        msg = getattr(err, "message", None)
+                        profiles["error"] = f"API Error {code}: {msg}" if (code or msg) else "API Error"
+                    except:
+                        profiles["error"] = "API Error"
+        except Exception as e:
+            profiles = {"total": 0, "hits": [], "error": str(e)}
 
         return {
             "exito": True,
