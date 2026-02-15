@@ -39,6 +39,7 @@ class ServicioDominio:
         # 2. Web Analysis
         meta_web = self._scrape_homepage(clean)
         http_data = self._analisis_avanzado_http(clean)
+        ip_resuelta = self._resolve_ip(clean)
         
         for email in meta_web.get('emails', []): correos.add(email)
 
@@ -54,7 +55,8 @@ class ServicioDominio:
                 "errores_api": errores,
                 "web_status": meta_web.get('estado', 'UNKNOWN'),
                 "titulo_pagina": meta_web.get('titulo_web', 'N/A'),
-                "fecha_creacion_dominio": self._get_whois_info(clean).get('creation_date')
+                "fecha_creacion_dominio": self._get_whois_info(clean).get('creation_date'),
+                "ip_asociada": ip_resuelta
             }
         }
 
@@ -87,3 +89,9 @@ class ServicioDominio:
             if isinstance(cd, list): cd = cd[0]
             return {"creation_date": str(cd) if cd else None}
         except: return {"creation_date": None}
+
+    def _resolve_ip(self, dominio: str) -> str:
+        try:
+            return socket.gethostbyname(dominio)
+        except:
+            return None
