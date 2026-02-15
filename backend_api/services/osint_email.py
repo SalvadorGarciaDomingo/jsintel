@@ -24,6 +24,25 @@ class ServicioEmail:
             mx_records = [str(r.exchange) for r in answers]
         except: pass
 
+        # SPF / DMARC
+        spf_record = None
+        dmarc_policy = None
+        try:
+            txt_answers = dns.resolver.resolve(dominio, 'TXT')
+            for r in txt_answers:
+                txt = str(r.strings[0] if getattr(r, 'strings', None) else r.to_text())
+                if txt.lower().startswith('"v=spf1') or txt.lower().startswith('v=spf1'):
+                    spf_record = txt.strip('"')
+        except: pass
+        try:
+            dmarc_domain = f"_dmarc.{dominio}"
+            dmarc_answers = dns.resolver.resolve(dmarc_domain, 'TXT')
+            for r in dmarc_answers:
+                txt = str(r.strings[0] if getattr(r, 'strings', None) else r.to_text())
+                if 'v=DMARC1' in txt:
+                    dmarc_policy = txt.strip('"')
+        except: pass
+
         return {
             "exito": True,
             "datos": {
@@ -32,6 +51,8 @@ class ServicioEmail:
                 "dominio": dominio,
                 "mx_records": mx_records,
                 "es_desechable": dominio in self.DISPOSABLE_DOMAINS,
-                "hibp_data": hibp_data
+                "hibp_data": hibp_data,
+                "spf": spf_record,
+                "dmarc": dmarc_policy
             }
         }

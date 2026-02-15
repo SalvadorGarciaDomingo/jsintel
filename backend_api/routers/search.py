@@ -15,12 +15,24 @@ async def perform_search(request: SearchRequest):
         # Detect type if not provided (simple heuristic or let orchestrator handle)
         tipo = request.tipo
         if not tipo:
-            # Basic detection logic could go here, or pass 'unknown' to orchestrator
-            # For parity, let's simplistic detection based on input
-            if "@" in request.objetivo: tipo = "email"
-            elif request.objetivo.replace('.', '').isdigit(): tipo = "phone" # Very basic
-            elif "http" in request.objetivo: tipo = "url"
-            else: tipo = "user" # Default fallback
+            objetivo = (request.objetivo or "").strip()
+            objetivo_lower = objetivo.lower()
+            tipo = "user"
+            if "@" in objetivo:
+                tipo = "email"
+            elif objetivo_lower.startswith("http://") or objetivo_lower.startswith("https://"):
+                tipo = "url"
+            else:
+                import re
+                ipv4_regex = r"^(?:\d{1,3}\.){3}\d{1,3}$"
+                domain_regex = r"^(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}$"
+                phone_regex = r"^\+?\d{7,15}$"
+                if re.match(ipv4_regex, objetivo_lower):
+                    tipo = "ip"
+                elif re.match(domain_regex, objetivo_lower):
+                    tipo = "domain"
+                elif re.match(phone_regex, objetivo_lower.replace(" ", "").replace("-", "")):
+                    tipo = "phone"
             
         resultados, correlaciones, geopuntos, tipo_detectado = await engine.run_analysis(
             objetivo_inicial=request.objetivo,

@@ -12,8 +12,13 @@ class ServicioVirusTotal:
 
     def analizar(self, valor: str, tipo: str) -> Dict[str, Any]:
         endpoint = ""
-        if tipo == 'ip': endpoint = f"/ip_addresses/{valor}"
-        elif tipo == 'domain': endpoint = f"/domains/{valor}"
+        if tipo == 'ip':
+            endpoint = f"/ip_addresses/{valor}"
+        elif tipo == 'domain':
+            clean = str(valor or "").strip().lower().rstrip(".")
+            if clean.startswith("www."):
+                clean = clean[4:]
+            endpoint = f"/domains/{clean}"
         elif tipo == 'url':
             encoded = base64.urlsafe_b64encode(valor.encode()).decode().strip("=")
             endpoint = f"/urls/{encoded}"
