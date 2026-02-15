@@ -22,6 +22,7 @@ from backend_api.services.cti_feeds import ServicioCTI
 from backend_api.services.osint_vysion import ServicioVysion
 from backend_api.services.osint_urlscan import ServicioUrlscan
 from backend_api.services.osint_virustotal import ServicioVirusTotal
+from backend_api.core.graph_builder import GraphBuilder
 
 class AnalysisEngine:
     """
@@ -128,7 +129,8 @@ class AnalysisEngine:
         resultados_check = {'desglose': desglose_final}
         correlaciones = self.correlador.correlacionar(resultados_check)
 
-        return resultados_raw, correlaciones, [], tipo_inicial # Geo points placeholder
+        graph_data = GraphBuilder().build(resultados_raw, objetivo_inicial, tipo_inicial)
+        return resultados_raw, correlaciones, graph_data, tipo_inicial
 
     async def _analizar_item(self, tipo: str, valor: str, es_archivo: bool = False) -> Dict[str, Any]:
         """Despacha al servicio correspondiente."""

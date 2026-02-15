@@ -37,7 +37,7 @@ async def perform_search(request: SearchRequest):
                 elif re.match(phone_regex, objetivo_lower.replace(" ", "").replace("-", "")):
                     tipo = "phone"
             
-        resultados, correlaciones, geopuntos, tipo_detectado = await engine.run_analysis(
+        resultados, correlaciones, graph_data, tipo_detectado = await engine.run_analysis(
             objetivo_inicial=request.objetivo,
             tipo_inicial=tipo
         )
@@ -48,6 +48,7 @@ async def perform_search(request: SearchRequest):
         if critical_count > 0: risk_score = "ALTO"
         elif len(correlaciones) > 5: risk_score = "MEDIO"
 
+        resultados["graph_data"] = graph_data
         return SearchResponse(
             exito=True,
             search_id=search_id,
@@ -57,7 +58,7 @@ async def perform_search(request: SearchRequest):
             timestamp=datetime.utcnow(),
             data=resultados,
             correlaciones=correlaciones,
-            geopuntos=geopuntos
+            geopuntos=[]
         )
 
     except Exception as e:
