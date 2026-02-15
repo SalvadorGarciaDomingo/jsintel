@@ -14,6 +14,10 @@ class ServicioDominio:
     ]
 
     def analizar(self, dominio: str) -> Dict[str, Any]:
+        # Normalizar dominio para consultas (evitar 'www.' y slashes finales)
+        clean = str(dominio or "").strip().lower().rstrip(".").rstrip("/")
+        if clean.startswith("www."):
+            clean = clean[4:]
         fuentes = {}
         subdominios = set()
         correos = set()
@@ -21,7 +25,7 @@ class ServicioDominio:
         
         # 1. CRT.SH
         try:
-            resp = requests.get(self.BASE_URL.format(dominio), headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+            resp = requests.get(self.BASE_URL.format(clean), headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
                 for item in data:
@@ -33,15 +37,15 @@ class ServicioDominio:
         except Exception as e: errores.append(f"crt.sh Error: {str(e)}")
 
         # 2. Web Analysis
-        meta_web = self._scrape_homepage(dominio)
-        http_data = self._analisis_avanzado_http(dominio)
+        meta_web = self._scrape_homepage(clean)
+        http_data = self._analisis_avanzado_http(clean)
         
         for email in meta_web.get('emails', []): correos.add(email)
 
         return {
             "exito": True,
             "datos": {
-                "dominio": dominio,
+                "dominio": clean,
                 "subdominios": list(subdominios),
                 "correos_relacionados": list(correos),
                 "telefonos_relacionados": meta_web.get('telefonos', []),
@@ -50,7 +54,7 @@ class ServicioDominio:
                 "errores_api": errores,
                 "web_status": meta_web.get('estado', 'UNKNOWN'),
                 "titulo_pagina": meta_web.get('titulo_web', 'N/A'),
-                "fecha_creacion_dominio": self._get_whois_info(dominio).get('creation_date')
+                "fecha_creacion_dominio": self._get_whois_info(clean).get('creation_date')
             }
         }
 
