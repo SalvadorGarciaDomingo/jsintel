@@ -16,19 +16,20 @@ class GraphBuilder:
         user = resultados.get("user", {})
         if user.get("datos"):
             u = user["datos"]
-            usuario = u.get("usuario") or u.get("username")
+            usr = u.get("username", {}) or {}
+            usuario = usr.get("usuario") or user.get("input")
             if usuario:
                 uid = f"user:{usuario}"
                 add_node(uid, usuario, "#3b82f6")
                 add_edge(root_id, uid, "usuario")
-                for p in u.get("perfiles_encontrados", []) or []:
+                for p in usr.get("perfiles_encontrados", []) or []:
                     sitio = p.get("sitio")
                     url = p.get("url")
                     if sitio:
                         pid = f"account:{sitio}:{usuario}"
                         add_node(pid, sitio, "#1e40af")
                         add_edge(uid, pid, url or "cuenta")
-                vip = u.get("vysion_im_profiles", {})
+                vip = usr.get("vysion_im_profiles", {})
                 for h in vip.get("hits", []) or []:
                     plat = h.get("platform") or "IM"
                     uname = ",".join(h.get("usernames", []) or [])
@@ -38,22 +39,23 @@ class GraphBuilder:
         domain = resultados.get("domain", {})
         if domain.get("datos"):
             d = domain["datos"]
-            dom = d.get("dominio")
-            if dom:
-                did = f"domain:{dom}"
-                add_node(did, dom, "#10b981")
+            dom_obj = d.get("dominio") or {}
+            dom_name = dom_obj.get("dominio") or resultados.get("domain", {}).get("input")
+            if dom_name:
+                did = f"domain:{dom_name}"
+                add_node(did, dom_name, "#10b981")
                 add_edge(root_id, did, "dominio")
-                for s in d.get("subdominios", []) or []:
+                for s in dom_obj.get("subdominios", []) or []:
                     sid = f"sub:{s}"
                     add_node(sid, s, "#34d399")
                     add_edge(did, sid, "sub")
-                for e in d.get("correos_relacionados", []) or []:
+                for e in dom_obj.get("correos_relacionados", []) or []:
                     eid = f"email:{e}"
                     add_node(eid, e, "#6366f1")
                     add_edge(did, eid, "email")
-                if d.get("ip_asociada"):
-                    ipid = f"ip:{d['ip_asociada']}"
-                    add_node(ipid, d["ip_asociada"], "#ef4444")
+                if dom_obj.get("ip_asociada"):
+                    ipid = f"ip:{dom_obj['ip_asociada']}"
+                    add_node(ipid, dom_obj["ip_asociada"], "#ef4444")
                     add_edge(did, ipid, "ip")
         ip = resultados.get("ip", {})
         if ip.get("datos"):

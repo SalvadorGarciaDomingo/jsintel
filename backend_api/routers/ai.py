@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from backend_api.models.api_models import AIAnalysisRequest, AIAnalysisResponse
 from backend_api.core.ai_client import AIIdentityAnalyst
+import json
 
 router = APIRouter(prefix="/api/v1/ai", tags=["AI"])
 
@@ -8,20 +9,45 @@ router = APIRouter(prefix="/api/v1/ai", tags=["AI"])
 async def analyze_with_ai(request: AIAnalysisRequest):
     try:
         analyst = AIIdentityAnalyst()
-        # Route to specific method based on context or generic prompt?
-        # For simplicity and parity, we might use a generic chat or specific analysis function.
-        # Assuming generic chat/analysis for now as per previous monolith usage pattern.
-        
         if "osint_data" in request.context:
-             analysis_result = analyst.analizar_resultados_globales(request.context["osint_data"])
-             return AIAnalysisResponse(
-                 exito=True,
-                 analisis=analysis_result.get("analisis", ""),
-                 riesgo=analysis_result.get("nivel_riesgo", "DESCONOCIDO")
-             )
-        
-        # Fallback to generic query if implemented, currently only implementing structured analysis
+            osint = request.context["osint_data"] or {}
+            resumen = build_osint_summary(osint)
+            result = analyst.analizar_global(resumen)
+            return AIAnalysisResponse(
+                exito=("error" not in result),
+                analisis=json.dumps(result, ensure_ascii=False),
+                riesgo=result.get("nivel_amenaza", "N/A")
+            )
         return AIAnalysisResponse(exito=False, analisis="Contexto insuficiente", riesgo="N/A")
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+def build_osint_summary(data: dict) -> str:
+    parts = []
+    ip = data.get("ip", {}).get("datos", {}).get("ip_api", {})
+    if ip:
+        parts.append(f"IP: {ip.get('ip')} | Ubicación: {ip.get('ubicacion')} | ISP: {ip.get('isp')} | ASN: {ip.get('asn')}")
+    domain = data.get("domain", {}).get("datos", {}).get("dominio", {})
+    if domain:
+        subs = ", ".join(domain.get("subdominios", [])[:10])
+        parts.append(f"Dominio: {domain.get('dominio')} | IP asociada: {domain.get('ip_asociada')} | Subdominios (10): {subs}")
+    email = data.get("email", {}).get("datos", {})
+    if email:
+        parts.append(f"Email: {email.get('email')} | Dominio: {email.get('dominio')} | Usuario: {email.get('usuario')} | Desechable: {email.get('es_desechable')}")
+    for item in data.get("emails", []) or []:
+        e = item.get("datos", {})
+        if e:
+            parts.append(f"Email derivado: {e.get('email')} | Dominio: {e.get('dominio')}")
+    user = data.get("user", {}).get("datos", {}).get("username", {})
+    if user:
+        perfiles = " | ".join([p.get("sitio", "") for p in user.get("perfiles_encontrados", [])])
+        parts.append(f"Usuario: {user.get('usuario')} | Perfiles: {perfiles}")
+    vysion = data.get("vysion", {}).get("datos", {})
+    if vysion:
+        total = vysion.get("total", 0)
+        parts.append(f"Vysion resultados web: {total}")
+        leaks = vysion.get("leaks", {})
+        if leaks:
+            parts.append(f"Vysion leaks: {leaks.get('total', 0)}")
+    return "\n".join(parts)
