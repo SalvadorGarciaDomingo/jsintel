@@ -218,30 +218,13 @@ class AnalysisEngine:
                 hits = vy_datos.get('hits', []) or []
                 leaks_total = (vy_datos.get('leaks', {}) or {}).get('total', 0)
                 menciones = len(hits)
-                hack = False
-                try:
-                    kws = ["hack", "hacked", "compromised", "stolen", "scam", "phish"]
-                    for h in hits:
-                        for t in h.get('tag', []) or []:
-                            v = str(t.get('value', '')).lower()
-                            if any(k in v for k in kws):
-                                hack = True
-                                break
-                        if hack: break
-                        txt = str((h.get('page', {}) or {}).get('text', '')).lower()
-                        if any(k in txt for k in kws):
-                            hack = True
-                            break
-                except: 
-                    hack = False
                 svc_res = {
                     "exito": wl_res.get('exito', False),
                     "datos": {
                         **datos_wl,
                         "vysion": {
                             "menciones": menciones,
-                            "leaks": leaks_total,
-                            "hackeada": hack
+                            "leaks": leaks_total
                         }
                     },
                     "error": wl_res.get('error')
