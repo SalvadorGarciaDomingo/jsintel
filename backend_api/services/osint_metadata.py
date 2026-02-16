@@ -40,3 +40,49 @@ class ServicioMetadatos:
             return {"exito": False, "error": "python-docx no instalado"}
         except Exception as e:
             return {"exito": False, "error": str(e)}
+
+    def analizar_archivo(self, ruta_archivo: str) -> Dict[str, Any]:
+        try:
+            import os, hashlib
+            stat = os.stat(ruta_archivo)
+            nombre = os.path.basename(ruta_archivo)
+            ext = os.path.splitext(nombre)[1].lower()
+            datos = {
+                "nombre": nombre,
+                "tamano_bytes": stat.st_size,
+                "extension": ext or ''
+            }
+            sha256 = None
+            md5 = None
+            try:
+                h_sha = hashlib.sha256()
+                h_md5 = hashlib.md5()
+                with open(ruta_archivo, "rb") as f:
+                    while True:
+                        chunk = f.read(8192)
+                        if not chunk: break
+                        h_sha.update(chunk)
+                        h_md5.update(chunk)
+                sha256 = h_sha.hexdigest()
+                md5 = h_md5.hexdigest()
+                datos["sha256"] = sha256
+                datos["md5"] = md5
+            except: pass
+            if ext == '.exe':
+                tipo = 'exe'
+                try:
+                    with open(ruta_archivo, "rb") as f:
+                        mz = f.read(2)
+                        f.seek(0x3C)
+                        pe_off = int.from_bytes(f.read(4), 'little')
+                        f.seek(pe_off)
+                        pe_sig = f.read(4)
+                    datos["es_pe"] = (mz == b'MZ' and pe_sig == b'PE\x00\x00')
+                except:
+                    datos["es_pe"] = False
+            else:
+                tipo = 'documento'
+            datos["tipo_archivo"] = tipo
+            return {"exito": True, "datos": datos}
+        except Exception as e:
+            return {"exito": False, "error": str(e)}

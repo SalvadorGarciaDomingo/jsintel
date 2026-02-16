@@ -22,6 +22,8 @@ class ServicioVirusTotal:
         elif tipo == 'url':
             encoded = base64.urlsafe_b64encode(valor.encode()).decode().strip("=")
             endpoint = f"/urls/{encoded}"
+        elif tipo == 'file':
+            endpoint = f"/files/{valor}"
         else: return {"exito": False, "error": "Tipo no soportado"}
 
         try:

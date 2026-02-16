@@ -229,15 +229,25 @@ class AnalysisEngine:
                         docx_res = md.analizar_docx(valor)
                 except: 
                     docx_res = {}
+                gen_res = md.analizar_archivo(valor)
                 ia = AIIdentityAnalyst()
                 ia_res = ia.analizar_documento(valor)
+                vt_file = {}
+                try:
+                    if gen_res.get('exito') and gen_res.get('datos', {}).get('tipo_archivo') == 'exe':
+                        sha256 = gen_res['datos'].get('sha256')
+                        if sha256:
+                            vt_file = self.servicios['virustotal'].analizar(sha256, 'file')
+                except: vt_file = {}
                 svc_res = {
-                    "exito": (docx_res.get('exito', False) if docx_res else False) or ("error" not in ia_res),
+                    "exito": (docx_res.get('exito', False) if docx_res else False) or gen_res.get('exito', False) or ("error" not in ia_res),
                     "datos": {
                         "docx": docx_res.get('datos', {}) if docx_res else {},
-                        "ia": ia_res
+                        "archivo": gen_res.get('datos', {}),
+                        "ia": ia_res,
+                        "vt_file": vt_file.get('datos', {})
                     },
-                    "error": docx_res.get('error')
+                    "error": docx_res.get('error') or gen_res.get('error')
                 }
 
             if svc_res:
