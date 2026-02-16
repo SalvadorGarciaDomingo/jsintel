@@ -313,7 +313,16 @@ class AIIdentityAnalyst:
             "generationConfig": {"response_mime_type": "application/json"}
         }
 
-        return self._call_gemini_raw(payload)
+        res = self._call_gemini_raw(payload)
+        if isinstance(res, dict) and res.get("error", "").startswith("Error API: 429"):
+            return {
+                "contexto": "Límite de uso de IA alcanzado temporalmente. Intenta de nuevo más tarde.",
+                "geolocalizacion": "",
+                "identificacion_visual": "",
+                "texto_extraido": "",
+                "info_tecnica": f"Fuente local: {os.path.basename(image_path)} | Rate Limit 429"
+            }
+        return res
 
     def analizar_documento(self, doc_input: str) -> dict:
         if not self.enabled: return {"error": "IA Desactivada"}
@@ -358,9 +367,25 @@ class AIIdentityAnalyst:
                     }],
                     "generationConfig": {"responseMimeType": "application/json"}
                 }
-                 return self._call_gemini_raw(payload)
+                 res = self._call_gemini_raw(payload)
+                 if isinstance(res, dict) and res.get("error", "").startswith("Error API: 429"):
+                     return {
+                        "resumen": "Límite de uso de IA alcanzado temporalmente. Intenta de nuevo más tarde.",
+                        "entidades": "",
+                        "metadatos": f"Archivo: {os.path.basename(doc_input)}",
+                        "sensibilidad": ""
+                     }
+                 return res
              else:
-                 return self._call_gemini(f"{prompt}\n\nDOCUMENT NAME: {os.path.basename(doc_input)}")
+                 res = self._call_gemini(f"{prompt}\n\nDOCUMENT NAME: {os.path.basename(doc_input)}")
+                 if isinstance(res, dict) and res.get("error", "").startswith("Error API: 429"):
+                     return {
+                        "resumen": "Límite de uso de IA alcanzado temporalmente. Intenta de nuevo más tarde.",
+                        "entidades": "",
+                        "metadatos": f"Archivo: {os.path.basename(doc_input)}",
+                        "sensibilidad": ""
+                     }
+                 return res
         
         elif text_content:
              return self._call_gemini(f"{prompt}\n\nCONTENT:\n{text_content[:30000]}")
