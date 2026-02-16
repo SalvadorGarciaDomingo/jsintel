@@ -65,6 +65,50 @@ class ServicioUrlscan:
             return {"exito": False, "error": f"Error API: {resp.status_code}"}
         except Exception as e: return {"exito": False, "error": str(e)}
 
+    def get_result(self, uuid: str) -> Dict[str, Any]:
+        try:
+            r = requests.get(f"{self.RESULT_URL}{uuid}/", timeout=10)
+            if r.status_code == 200:
+                j = r.json() or {}
+                page = j.get('page', {}) or {}
+                verdicts = j.get('verdicts', {}) or {}
+                overall = verdicts.get('overall', {}) or {}
+                url = page.get('url')
+                domain = page.get('domain')
+                ip = page.get('ip')
+                asn = page.get('asn')
+                country = page.get('country')
+                title = page.get('title')
+                s = 0
+                try:
+                    s = int(overall.get('score') or 0)
+                except:
+                    s = 0
+                if overall.get('malicious'): s = max(s, 90)
+                if s == 0:
+                    text = f"{(title or '')} {(url or '')}".lower()
+                    flags = ['login', 'bank', 'paypal', 'verify', 'account', 'admin', 'wallet']
+                    count = sum(1 for w in flags if w in text)
+                    s = min(100, count * 20)
+                return {
+                    "exito": True,
+                    "datos": {
+                        "resultado": {
+                            "url": url,
+                            "dominio": domain,
+                            "ip": ip,
+                            "asn": asn,
+                            "pais": country,
+                            "titulo": title,
+                            "score": s
+                        },
+                        "mensaje": "Resultado obtenido"
+                    }
+                }
+            return {"exito": False, "error": f"Error API: {r.status_code}"}
+        except Exception as e:
+            return {"exito": False, "error": str(e)}
+
     def obtener_resultado(self, uuid: str) -> Dict[str, Any]:
         try:
             resp = requests.get(f"{self.RESULT_URL}{uuid}/", timeout=15)

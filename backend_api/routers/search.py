@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, UploadFile, File, Form
 from backend_api.models.api_models import SearchRequest, SearchResponse, CheckURLRequest, CheckURLResponse
 from backend_api.core.orchestrator import AnalysisEngine
+from backend_api.services.osint_urlscan import ServicioUrlscan
 import uuid
 from datetime import datetime
 import requests
@@ -85,6 +86,15 @@ async def check_url(req: CheckURLRequest):
         return CheckURLResponse(active=active, status_code=status, final_url=final)
     except Exception as e:
         return CheckURLResponse(active=False, status_code=None, final_url=None, error=str(e))
+
+@router.post("/urlscan_result")
+async def urlscan_result(uuid: str = Form(...) ):
+    try:
+        svc = ServicioUrlscan()
+        res = svc.get_result(uuid)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/upload_analyze", response_model=SearchResponse)
 async def upload_analyze(
