@@ -15,7 +15,8 @@ from backend_api.services.osint_domain import ServicioDominio
 from backend_api.services.osint_email import ServicioEmail
 from backend_api.services.osint_username import ServicioUsuario
 from backend_api.services.osint_phone import ServicioTelefono
-# from backend_api_prod.services.osint_image import ServicioImagen # On demand only
+from backend_api.services.osint_image import ServicioImagen
+from backend_api.services.osint_metadata import ServicioMetadatos
 from backend_api.services.osint_discord import ServicioDiscord
 from backend_api.services.osint_wallet import ServicioWallet
 from backend_api.services.cti_feeds import ServicioCTI
@@ -42,6 +43,8 @@ class AnalysisEngine:
             'email': ServicioEmail(),
             'user': ServicioUsuario(),
             'phone': ServicioTelefono(),
+            'image': ServicioImagen(),
+            'document': ServicioMetadatos(),
             'discord': ServicioDiscord(),
             'wallet': ServicioWallet(),
             'cti': ServicioCTI(),
@@ -204,6 +207,37 @@ class AnalysisEngine:
             elif tipo == 'wallet':
                 wl_res = self.servicios['wallet'].analizar(valor)
                 svc_res = wl_res
+            elif tipo == 'image':
+                meta_res = self.servicios['image'].analizar(valor)
+                ia = AIIdentityAnalyst()
+                ia_res = ia.analizar_imagen(valor)
+                svc_res = {
+                    "exito": meta_res.get('exito', False) or ("error" not in ia_res),
+                    "datos": {
+                        "metadata": meta_res.get('datos', {}),
+                        "ia": ia_res
+                    },
+                    "error": meta_res.get('error')
+                }
+            elif tipo == 'document':
+                md = ServicioMetadatos()
+                docx_res = {}
+                try:
+                    low = valor.lower()
+                    if low.endswith(".docx"):
+                        docx_res = md.analizar_docx(valor)
+                except: 
+                    docx_res = {}
+                ia = AIIdentityAnalyst()
+                ia_res = ia.analizar_documento(valor)
+                svc_res = {
+                    "exito": (docx_res.get('exito', False) if docx_res else False) or ("error" not in ia_res),
+                    "datos": {
+                        "docx": docx_res.get('datos', {}) if docx_res else {},
+                        "ia": ia_res
+                    },
+                    "error": docx_res.get('error')
+                }
 
             if svc_res:
                 return {
