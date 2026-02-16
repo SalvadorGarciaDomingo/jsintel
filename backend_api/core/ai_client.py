@@ -272,6 +272,22 @@ class AIIdentityAnalyst:
                 return {"error": "File not found"}
 
         if not image_data: return {"error": "Failed to process image"}
+        # Determine MIME
+        mime_type = "image/jpeg"
+        try:
+            if image_path.startswith('http://') or image_path.startswith('https://'):
+                ct = resp.headers.get("Content-Type", "")
+                if ct:
+                    mime_type = ct.split(";")[0].strip()
+            else:
+                ext = os.path.splitext(image_path)[1].lower()
+                if ext in [".jpg", ".jpeg"]: mime_type = "image/jpeg"
+                elif ext == ".png": mime_type = "image/png"
+                elif ext == ".webp": mime_type = "image/webp"
+                elif ext == ".gif": mime_type = "image/gif"
+                elif ext == ".bmp": mime_type = "image/bmp"
+        except:
+            pass
 
         prompt = """
         ACTÚA COMO UN ANALISTA EXPERTO EN INTELIGENCIA DE IMÁGENES (IMINT) Y GEO-LOCALIZACIÓN (GEOINT).
@@ -291,7 +307,7 @@ class AIIdentityAnalyst:
             "contents": [{
                 "parts": [
                     {"text": prompt},
-                    {"inline_data": {"mime_type": "image/jpeg", "data": image_data}}
+                    {"inline_data": {"mime_type": mime_type, "data": image_data}}
                 ]
             }],
             "generationConfig": {"response_mime_type": "application/json"}
@@ -331,16 +347,20 @@ class AIIdentityAnalyst:
         """
         
         if is_file and doc_data:
-             payload = {
-                "contents": [{
-                    "parts": [
-                        {"text": prompt},
-                        {"inline_data": {"mime_type": "application/pdf", "data": doc_data}}
-                    ]
-                }],
-                "generationConfig": {"responseMimeType": "application/json"}
-            }
-             return self._call_gemini_raw(payload)
+             ext = os.path.splitext(doc_input)[1].lower()
+             if ext == ".pdf":
+                 payload = {
+                    "contents": [{
+                        "parts": [
+                            {"text": prompt},
+                            {"inline_data": {"mime_type": "application/pdf", "data": doc_data}}
+                        ]
+                    }],
+                    "generationConfig": {"responseMimeType": "application/json"}
+                }
+                 return self._call_gemini_raw(payload)
+             else:
+                 return self._call_gemini(f"{prompt}\n\nDOCUMENT NAME: {os.path.basename(doc_input)}")
         
         elif text_content:
              return self._call_gemini(f"{prompt}\n\nCONTENT:\n{text_content[:30000]}")

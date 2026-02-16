@@ -104,9 +104,9 @@ async def upload_analyze(
         engine = AnalysisEngine(max_depth=0)  # sin pivots para archivos
         search_id = str(uuid.uuid4())
         resultados, correlaciones, graph_data, tipo_detectado = await engine.run_analysis(
-            objetivo_inicial=file.filename or "archivo_subido",
+            objetivo_inicial=tmp_path,
             tipo_inicial=tipo,
-            archivos_adjuntos=[{"tipo": tipo, "valor": tmp_path}]
+            archivos_adjuntos=[]
         )
         # Limpieza del archivo temporal
         try:

@@ -41,6 +41,7 @@ class ServicioUsuario:
         
         hibp_data = ServicioHIBP().sync_check_account(usuario)
         profiles = {"total": 0, "hits": [], "error": None}
+        alias_leaks = {"total": 0, "hits": [], "error": None}
         try:
             if self.vysion and hasattr(self.vysion, "search_im_profiles"):
                 from datetime import datetime, timedelta
@@ -135,8 +136,54 @@ class ServicioUsuario:
                         profiles["error"] = f"API Error {code}: {msg}" if (code or msg) else "API Error"
                     except:
                         profiles["error"] = "API Error"
+            # Buscar filtraciones (leaks) por alias
+            if self.vysion and hasattr(self.vysion, "search_leaks"):
+                from datetime import datetime, timedelta
+                now = datetime.utcnow()
+                gte = (now - timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%S")
+                lte = now.strftime("%Y-%m-%dT%H:%M:%S")
+                leak_queries = [usuario, usuario.lower(), usuario.upper(), usuario.replace('_', ' ')]
+                leak_hits = []
+                for q in leak_queries:
+                    try:
+                        lres = self.vysion.search_leaks(q=q, gte=gte, lte=lte)
+                        for hit in getattr(lres, "hits", []) or []:
+                            leak_hits.append({
+                                "id": getattr(hit, 'id', None),
+                                "filePath": getattr(hit, 'filePath', None),
+                                "fileHash": getattr(hit, 'fileHash', None),
+                                "detectionDate": str(getattr(hit, 'detectionDate', '')),
+                                "detectedInfo": {
+                                    "emails": list(getattr(getattr(hit, 'detectedInfo', None) or {}, 'emails', []) or getattr(getattr(hit, 'detectedInfo', None) or {}, 'emails', [])),
+                                    "usernames": list(getattr(getattr(hit, 'detectedInfo', None) or {}, 'usernames', []) or getattr(getattr(hit, 'detectedInfo', None) or {}, 'usernames', []))
+                                },
+                                "highlight": {
+                                    "detectedInfo.emails": list((getattr(getattr(hit, 'highlight', None) or {}, 'detectedInfo.emails', []) or [])),
+                                    "content": list((getattr(getattr(hit, 'highlight', None) or {}, 'content', []) or []))
+                                }
+                            })
+                    except Exception as _:
+                        pass
+                # Deduplicación por id o filePath+fileHash
+                uniq = []
+                seen = set()
+                for h in leak_hits:
+                    key = h.get("id") or (h.get("filePath"), h.get("fileHash"))
+                    if key not in seen:
+                        seen.add(key)
+                        uniq.append(h)
+                # Orden por fecha descendente
+                def _ts(x):
+                    from datetime import datetime as _dt
+                    try:
+                        return int(_dt.fromisoformat((x or '').replace('Z', '+00:00')).timestamp())
+                    except:
+                        return 0
+                uniq.sort(key=lambda x: _ts(x.get("detectionDate")), reverse=True)
+                alias_leaks = {"total": len(uniq), "hits": uniq, "error": None}
         except Exception as e:
             profiles = {"total": 0, "hits": [], "error": str(e)}
+            alias_leaks = {"total": 0, "hits": [], "error": str(e)}
 
         return {
             "exito": True,
@@ -145,7 +192,8 @@ class ServicioUsuario:
                 "perfiles_encontrados": resultados,
                 "hibp_data": hibp_data,
                 "total_encontrados": len(resultados),
-                "vysion_im_profiles": profiles
+                "vysion_im_profiles": profiles,
+                "vysion_alias_leaks": alias_leaks
             }
         }
 
