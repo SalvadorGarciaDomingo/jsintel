@@ -18,6 +18,8 @@ async def perform_search(request: SearchRequest):
         
         # Detect type if not provided (simple heuristic or let orchestrator handle)
         tipo = request.tipo
+        if tipo == "crypto":
+            tipo = "wallet"
         if not tipo:
             objetivo = (request.objetivo or "").strip()
             objetivo_lower = objetivo.lower().strip()

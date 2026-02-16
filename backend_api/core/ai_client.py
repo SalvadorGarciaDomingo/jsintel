@@ -219,7 +219,7 @@ class AIIdentityAnalyst:
 
     def analizar_empresa(self, empresa: str) -> dict:
         if not self.enabled:
-            return self._fallback_empresa(empresa, motivo="IA Desactivada")
+            return {"error": "IA Desactivada"}
 
         prompt = f"""
         ACTÚA COMO UN ANALISTA DE INTELIGENCIA CORPORATIVA.
@@ -241,32 +241,11 @@ class AIIdentityAnalyst:
         """
         res = self._call_gemini(prompt)
         if "error" in res:
-            return self._fallback_empresa(empresa, motivo=res.get("error"))
+            err = str(res.get("error"))
+            if "429" in err:
+                return {"error": "Te has quedado sin usos de la IA (429)"}
+            return res
         return res
-
-    def _fallback_empresa(self, empresa: str, motivo: str = "") -> dict:
-        name = (empresa or "").lower()
-        sector = "Desconocido"
-        if any(k in name for k in ["bank", "banco", "financ", "card"]): sector = "Finanzas"
-        elif any(k in name for k in ["tech", "soft", "digital", "cloud", "data", "ai"]): sector = "Tecnología"
-        elif any(k in name for k in ["health", "salud", "med", "clinic"]): sector = "Salud"
-        elif any(k in name for k in ["energy", "energia", "oil", "gas", "solar"]): sector = "Energía"
-        elif any(k in name for k in ["retail", "store", "shop", "market"]): sector = "Retail"
-
-        reputacion = "Desconocida"
-        if any(k in name for k in ["corp", "inc", "s.a", "sa", "ltd", "gmbh"]): reputacion = "Establecida"
-        elif any(k in name for k in ["startup", "labs"]): reputacion = "Emergente"
-
-        riesgo = "Bajo"
-        if any(k in name for k in ["scam", "fraud", "hack", "leak"]): riesgo = "Alto"
-
-        datos = f"Perfil estimado por heurística. Motivo: {motivo or 'sin IA'}."
-        return {
-            "sector": sector,
-            "reputacion": reputacion,
-            "riesgo": riesgo,
-            "datos_clave": datos
-        }
 
     def analizar_imagen(self, image_path: str) -> dict:
         if not self.enabled: return {"error": "IA Desactivada"}
