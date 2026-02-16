@@ -119,15 +119,17 @@ class AnalysisEngine:
                         })
 
         # 4. Enriquecimiento Global (CTI, Vysion) sobre el objetivo principal
-        # Solo lo hacemos para el objetivo input real para ahorrar cuota
+        # Restricción: Menciones web y leaks solo para user, domain, ip, email, company
+        allowed_vysion = ['user', 'domain', 'ip', 'email', 'company']
         if tipo_inicial not in ['image', 'document']:
             cti_global = self.servicios['cti'].verificar_agente_malicioso(objetivo_inicial)
             resultados_raw['cti'] = cti_global
-            try:
-                vysion_global = self.servicios['vysion'].analizar(objetivo_inicial)
-                resultados_raw['vysion'] = vysion_global
-            except Exception as _:
-                resultados_raw['vysion'] = {"exito": False, "error": "Vysion error"}
+            if tipo_inicial in allowed_vysion:
+                try:
+                    vysion_global = self.servicios['vysion'].analizar(objetivo_inicial)
+                    resultados_raw['vysion'] = vysion_global
+                except Exception as _:
+                    resultados_raw['vysion'] = {"exito": False, "error": "Vysion error"}
         
         # 5. Correlación Final
         resultados_check = {'desglose': desglose_final}
@@ -208,6 +210,16 @@ class AnalysisEngine:
             elif tipo == 'wallet':
                 wl_res = self.servicios['wallet'].analizar(valor)
                 svc_res = wl_res
+            elif tipo == 'company':
+                ia = AIIdentityAnalyst()
+                ia_res = ia.analizar_empresa(valor)
+                svc_res = {
+                    "exito": ("error" not in ia_res),
+                    "datos": {
+                        "empresa": ia_res
+                    },
+                    "error": ia_res.get('error')
+                }
             elif tipo == 'image':
                 meta_res = self.servicios['image'].analizar(valor)
                 ia = AIIdentityAnalyst()
