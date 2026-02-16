@@ -209,7 +209,43 @@ class AnalysisEngine:
                 svc_res = dc
             elif tipo == 'wallet':
                 wl_res = self.servicios['wallet'].analizar(valor)
-                svc_res = wl_res
+                try:
+                    vy_res = self.servicios['vysion'].analizar(valor)
+                except Exception as _:
+                    vy_res = {"exito": False, "error": "Vysion error"}
+                datos_wl = wl_res.get('datos', {})
+                vy_datos = vy_res.get('datos', {}) if vy_res.get('exito') else {}
+                hits = vy_datos.get('hits', []) or []
+                leaks_total = (vy_datos.get('leaks', {}) or {}).get('total', 0)
+                menciones = len(hits)
+                hack = False
+                try:
+                    kws = ["hack", "hacked", "compromised", "stolen", "scam", "phish"]
+                    for h in hits:
+                        for t in h.get('tag', []) or []:
+                            v = str(t.get('value', '')).lower()
+                            if any(k in v for k in kws):
+                                hack = True
+                                break
+                        if hack: break
+                        txt = str((h.get('page', {}) or {}).get('text', '')).lower()
+                        if any(k in txt for k in kws):
+                            hack = True
+                            break
+                except: 
+                    hack = False
+                svc_res = {
+                    "exito": wl_res.get('exito', False),
+                    "datos": {
+                        **datos_wl,
+                        "vysion": {
+                            "menciones": menciones,
+                            "leaks": leaks_total,
+                            "hackeada": hack
+                        }
+                    },
+                    "error": wl_res.get('error')
+                }
             elif tipo == 'company':
                 ia = AIIdentityAnalyst()
                 ia_res = ia.analizar_empresa(valor)
