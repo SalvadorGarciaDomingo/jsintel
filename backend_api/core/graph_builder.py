@@ -39,23 +39,22 @@ class GraphBuilder:
         domain = resultados.get("domain", {})
         if domain.get("datos"):
             d = domain["datos"]
-            dom_obj = d.get("dominio") or {}
-            dom_name = dom_obj.get("dominio") or resultados.get("domain", {}).get("input")
+            dom_name = d.get("dominio") or resultados.get("domain", {}).get("input")
             if dom_name:
                 did = f"domain:{dom_name}"
                 add_node(did, dom_name, "#10b981")
                 add_edge(root_id, did, "dominio")
-                for s in dom_obj.get("subdominios", []) or []:
+                for s in d.get("subdominios", []) or []:
                     sid = f"sub:{s}"
                     add_node(sid, s, "#34d399")
-                    add_edge(did, sid, "sub")
-                for e in dom_obj.get("correos_relacionados", []) or []:
+                    add_edge(did, sid, "subdominio")
+                for e in d.get("correos_relacionados", []) or []:
                     eid = f"email:{e}"
                     add_node(eid, e, "#6366f1")
                     add_edge(did, eid, "email")
-                if dom_obj.get("ip_asociada"):
-                    ipid = f"ip:{dom_obj['ip_asociada']}"
-                    add_node(ipid, dom_obj["ip_asociada"], "#ef4444")
+                if d.get("ip_asociada"):
+                    ipid = f"ip:{d['ip_asociada']}"
+                    add_node(ipid, d["ip_asociada"], "#ef4444")
                     add_edge(did, ipid, "ip")
         ip = resultados.get("ip", {})
         if ip.get("datos"):

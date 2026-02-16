@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
-from backend_api.models.api_models import SearchRequest, SearchResponse
+from backend_api.models.api_models import SearchRequest, SearchResponse, CheckURLRequest, CheckURLResponse
 from backend_api.core.orchestrator import AnalysisEngine
 import uuid
 from datetime import datetime
+import requests
 
 router = APIRouter(prefix="/api/v1/search", tags=["Search"])
 
@@ -63,3 +64,22 @@ async def perform_search(request: SearchRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/check_url", response_model=CheckURLResponse)
+async def check_url(req: CheckURLRequest):
+    url = (req.url or "").strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="URL vacía")
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+    try:
+        resp = requests.get(url, headers=headers, timeout=6, allow_redirects=True, stream=True)
+        status = resp.status_code
+        final = resp.url
+        resp.close()
+        active = 200 <= status < 400
+        return CheckURLResponse(active=active, status_code=status, final_url=final)
+    except Exception as e:
+        return CheckURLResponse(active=False, status_code=None, final_url=None, error=str(e))

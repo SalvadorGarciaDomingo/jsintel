@@ -25,3 +25,12 @@ class AIAnalysisResponse(BaseModel):
     exito: bool
     analisis: str
     riesgo: str
+
+class CheckURLRequest(BaseModel):
+    url: str
+
+class CheckURLResponse(BaseModel):
+    active: bool
+    status_code: int | None = None
+    final_url: str | None = None
+    error: str | None = None
