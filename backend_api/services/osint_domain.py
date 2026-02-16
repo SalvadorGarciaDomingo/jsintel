@@ -3,6 +3,8 @@ from typing import Dict, Any, List
 import re
 import socket
 import whois
+import ssl
+from urllib.parse import urlparse
 
 class ServicioDominio:
     BASE_URL = "https://crt.sh/?q={}&output=json"
@@ -23,7 +25,6 @@ class ServicioDominio:
         correos = set()
         errores = []
         
-        # 1. CRT.SH
         try:
             resp = requests.get(self.BASE_URL.format(clean), headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
             if resp.status_code == 200:
@@ -35,6 +36,49 @@ class ServicioDominio:
                         else: subdominios.add(nombre)
             else: errores.append(f"crt.sh HTTP {resp.status_code}")
         except Exception as e: errores.append(f"crt.sh Error: {str(e)}")
+        try:
+            resp2 = requests.get(self.BASE_URL.format(f"%25.{clean}"), headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
+            if resp2.status_code == 200:
+                data2 = resp2.json()
+                for item in data2[:2000]:
+                    name_value = item.get('name_value', '')
+                    for nombre in name_value.split('\n'):
+                        if '@' in nombre: correos.add(nombre)
+                        else: subdominios.add(nombre)
+            else: errores.append(f"crt.sh* HTTP {resp2.status_code}")
+        except Exception as e: errores.append(f"crt.sh* Error: {str(e)}")
+        try:
+            wb = requests.get(f"https://web.archive.org/cdx/search/cdx?url=*.{clean}&output=json&fl=original&collapse=urlkey", headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
+            if wb.status_code == 200:
+                j = wb.json()
+                rows = j[1:1501] if isinstance(j, list) and len(j) > 1 else []
+                for r in rows:
+                    u = r[0] if isinstance(r, list) and r else (r if isinstance(r, str) else "")
+                    try:
+                        h = urlparse(u).hostname or ""
+                        h = h.lower()
+                        if h and h != clean and (h.endswith(f".{clean}")):
+                            subdominios.add(h)
+                        if h == clean:
+                            p = urlparse(u).path or ""
+                            m = re.search(r'([a-z0-9-]+)\.' + re.escape(clean), u, re.IGNORECASE)
+                            if m:
+                                subdominios.add(m.group(0).lower())
+                    except: pass
+            else: errores.append(f"wayback HTTP {wb.status_code}")
+        except Exception as e: errores.append(f"wayback Error: {str(e)}")
+        try:
+            ctx = ssl.create_default_context()
+            with socket.create_connection((clean, 443), timeout=4) as sock:
+                with ctx.wrap_socket(sock, server_hostname=clean) as ssock:
+                    cert = ssock.getpeercert()
+                    san = cert.get('subjectAltName', []) if isinstance(cert, dict) else []
+                    for t, n in san:
+                        if t == 'DNS':
+                            x = n.lower().lstrip("*.")
+                            if x and x != clean and x.endswith(f".{clean}"):
+                                subdominios.add(x)
+        except Exception as e: errores.append(f"tls Error: {str(e)}")
 
         # 2. Web Analysis
         meta_web = self._scrape_homepage(clean)
