@@ -120,7 +120,7 @@ class AnalysisEngine:
 
         # 4. Enriquecimiento Global (CTI, Vysion) sobre el objetivo principal
         # Restricción: Menciones web y leaks solo para user, domain, ip, email, company
-        allowed_vysion = ['user', 'domain', 'ip', 'email', 'company']
+        allowed_vysion = ['user', 'domain', 'ip', 'email', 'company', 'wallet']
         if tipo_inicial not in ['image', 'document']:
             cti_global = self.servicios['cti'].verificar_agente_malicioso(objetivo_inicial)
             resultados_raw['cti'] = cti_global
