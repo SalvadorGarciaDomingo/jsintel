@@ -38,7 +38,7 @@ class GraphBuilder:
                     add_edge(uid, pid, "perfil IM")
         domain = resultados.get("domain", {})
         if domain.get("datos"):
-            d = domain["datos"]
+            d = domain["datos"].get("dominio") or {}
             dom_name = d.get("dominio") or resultados.get("domain", {}).get("input")
             if dom_name:
                 did = f"domain:{dom_name}"
