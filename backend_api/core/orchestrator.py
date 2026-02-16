@@ -120,13 +120,14 @@ class AnalysisEngine:
 
         # 4. Enriquecimiento Global (CTI, Vysion) sobre el objetivo principal
         # Solo lo hacemos para el objetivo input real para ahorrar cuota
-        cti_global = self.servicios['cti'].verificar_agente_malicioso(objetivo_inicial)
-        resultados_raw['cti'] = cti_global
-        try:
-            vysion_global = self.servicios['vysion'].analizar(objetivo_inicial)
-            resultados_raw['vysion'] = vysion_global
-        except Exception as _:
-            resultados_raw['vysion'] = {"exito": False, "error": "Vysion error"}
+        if tipo_inicial not in ['image', 'document']:
+            cti_global = self.servicios['cti'].verificar_agente_malicioso(objetivo_inicial)
+            resultados_raw['cti'] = cti_global
+            try:
+                vysion_global = self.servicios['vysion'].analizar(objetivo_inicial)
+                resultados_raw['vysion'] = vysion_global
+            except Exception as _:
+                resultados_raw['vysion'] = {"exito": False, "error": "Vysion error"}
         
         # 5. Correlación Final
         resultados_check = {'desglose': desglose_final}

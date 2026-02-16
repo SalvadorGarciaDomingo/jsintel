@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, UploadFile, File, Form
 from backend_api.models.api_models import SearchRequest, SearchResponse, CheckURLRequest, CheckURLResponse
 from backend_api.core.orchestrator import AnalysisEngine
 import uuid
 from datetime import datetime
 import requests
+import tempfile
+import os
 
 router = APIRouter(prefix="/api/v1/search", tags=["Search"])
 
@@ -83,3 +85,49 @@ async def check_url(req: CheckURLRequest):
         return CheckURLResponse(active=active, status_code=status, final_url=final)
     except Exception as e:
         return CheckURLResponse(active=False, status_code=None, final_url=None, error=str(e))
+
+@router.post("/upload_analyze", response_model=SearchResponse)
+async def upload_analyze(
+    file: UploadFile = File(...),
+    tipo: str = Form(...),
+):
+    try:
+        if tipo not in ["image", "document"]:
+            raise HTTPException(status_code=400, detail="Tipo inválido. Use 'image' o 'document'.")
+        # Guardar archivo temporalmente
+        suffix = os.path.splitext(file.filename or "")[1] or ""
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            content = await file.read()
+            tmp.write(content)
+            tmp_path = tmp.name
+        # Ejecutar análisis con archivo adjunto
+        engine = AnalysisEngine(max_depth=0)  # sin pivots para archivos
+        search_id = str(uuid.uuid4())
+        resultados, correlaciones, graph_data, tipo_detectado = await engine.run_analysis(
+            objetivo_inicial=file.filename or "archivo_subido",
+            tipo_inicial=tipo,
+            archivos_adjuntos=[{"tipo": tipo, "valor": tmp_path}]
+        )
+        # Limpieza del archivo temporal
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
+        # Riesgo simple (archivos no generan correlaciones típicas)
+        risk_score = "BAJO"
+        resultados["graph_data"] = graph_data
+        return SearchResponse(
+            exito=True,
+            search_id=search_id,
+            query=file.filename or "archivo",
+            detected_type=tipo_detectado,
+            risk_score=risk_score,
+            timestamp=datetime.utcnow(),
+            data=resultados,
+            correlaciones=correlaciones,
+            geopuntos=[]
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
