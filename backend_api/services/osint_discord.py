@@ -15,30 +15,6 @@ class ServicioDiscord:
         if settings.DISCORD_BOT_TOKEN:
             self.headers['Authorization'] = f'Bot {settings.DISCORD_BOT_TOKEN}'
 
-    def analizar_invitacion(self, invite_link: str) -> Dict[str, Any]:
-        match = re.search(r'discord(?:\.gg|app\.com/invite)/([a-zA-Z0-9-]+)', invite_link)
-        if not match: return {"exito": False, "error": "Enlace inválido"}
-        
-        code = match.group(1)
-        try:
-            resp = requests.get(f"{self.API_BASE}/invites/{code}?with_counts=true", headers=self.headers, timeout=10)
-            if resp.status_code == 200:
-                data = resp.json()
-                guild = data.get('guild', {})
-                return {
-                    "exito": True,
-                    "tipo": "SERVIDOR",
-                    "datos": {
-                        "nombre": guild.get('name'),
-                        "id": guild.get('id'),
-                        "miembros": data.get('approximate_member_count'),
-                        "online": data.get('approximate_presence_count'),
-                        "invitador": data.get('inviter', {}).get('username')
-                    }
-                }
-            return {"exito": False, "error": f"API Error {resp.status_code}"}
-        except Exception as e: return {"exito": False, "error": str(e)}
-
     def analizar_usuario_id(self, user_id: str) -> Dict[str, Any]:
         if not user_id.isdigit(): return {"exito": False, "error": "ID no numérico"}
         

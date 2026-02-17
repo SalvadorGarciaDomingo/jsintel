@@ -8,6 +8,7 @@ router = APIRouter(prefix="/api/v1/ai", tags=["AI"])
 @router.post("/analyze", response_model=AIAnalysisResponse)
 async def analyze_with_ai(request: AIAnalysisRequest):
     try:
+        # Genera un informe global a partir del contexto OSINT agregado
         analyst = AIIdentityAnalyst()
         if "osint_data" in request.context:
             osint = request.context["osint_data"] or {}
@@ -24,6 +25,7 @@ async def analyze_with_ai(request: AIAnalysisRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 def build_osint_summary(data: dict) -> str:
+    # Compone un resumen textual de hallazgos clave para alimentar a la IA
     parts = []
     ip = data.get("ip", {}).get("datos", {}).get("ip_api", {})
     if ip:
@@ -55,13 +57,14 @@ def build_osint_summary(data: dict) -> str:
 @router.post("/chat", response_model=AIChatResponse)
 async def chat_with_ai(request: AIChatRequest):
     try:
+        # Chat contextual: la IA responde usando los resultados de la búsqueda actual
         analyst = AIIdentityAnalyst()
         contexto = request.context or {}
         pregunta = request.question
         res = analyst.chatear(contexto, pregunta)
         if isinstance(res, dict) and "respuesta" in res:
             return AIChatResponse(exito=True, respuesta=str(res["respuesta"]))
-        # Fallback: stringify any JSON-style response
+        # Fallback: convertir a texto cualquier respuesta tipo JSON
         return AIChatResponse(exito=True, respuesta=json.dumps(res, ensure_ascii=False))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

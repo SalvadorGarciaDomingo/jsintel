@@ -2,12 +2,14 @@ import re
 from typing import Dict, Any
 
 class ServicioWallet:
+    # Validación simple de direcciones BTC/ETH usando expresiones regulares
     PATRONES = {
         "BTC": r"^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$",
         "ETH": r"^0x[a-fA-F0-9]{40}$"
     }
 
     def analizar(self, wallet: str) -> Dict[str, Any]:
+        # Detecta el tipo por patrón y construye el enlace al explorador
         wallet = wallet.strip()
         tipo = None
         for t, p in self.PATRONES.items():

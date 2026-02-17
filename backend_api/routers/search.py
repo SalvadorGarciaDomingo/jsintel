@@ -13,13 +13,13 @@ router = APIRouter(prefix="/api/v1/search", tags=["Search"])
 @router.post("/", response_model=SearchResponse)
 async def perform_search(request: SearchRequest):
     try:
-        engine = AnalysisEngine(max_depth=2) # Configurable depth
+        engine = AnalysisEngine(max_depth=2) # Profundidad de pivots configurable
         search_id = str(uuid.uuid4())
         
-        # Detect type if not provided (simple heuristic or let orchestrator handle)
+        # Detección de tipo si no llega (heurística simple)
         tipo = request.tipo
         if tipo == "crypto":
-            tipo = "wallet"
+            tipo = "wallet"  # Normalización de 'crypto' -> 'wallet'
         if not tipo:
             objetivo = (request.objetivo or "").strip()
             objetivo_lower = objetivo.lower().strip()
@@ -48,10 +48,10 @@ async def perform_search(request: SearchRequest):
             tipo_inicial=tipo
         )
         
-        # Calculate aggregations or risk score here based on correlations + ransomware mentions
+        # Cálculo de riesgo global: correlaciones críticas + menciones de ransomware (Vysion)
         risk_score = "BAJO"
         critical_count = sum(1 for c in correlaciones if c.get('nivel') in ['Alta', 'Crítica'])
-        # Ransomware detection from Vysion
+        # Detección de ransomware a partir de Vysion
         ransom_flag = False
         try:
             v = resultados.get('vysion', {}).get('datos', {}) or {}

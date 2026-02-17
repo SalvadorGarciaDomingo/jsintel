@@ -30,6 +30,7 @@ class AnalysisEngine:
     Motor de análisis OSINT para producción.
     Orquesta la ejecución de servicios y la correlación de datos.
     """
+    # max_depth controla los pivots automáticos; servicios contiene todos los módulos OSINT involucrados.
     
     def __init__(self, max_depth: int = 1, max_workers: int = 50):
         self.max_depth = max_depth
@@ -57,6 +58,7 @@ class AnalysisEngine:
         """
         Ejecuta el ciclo completo de análisis.
         """
+        # resultados_raw agrupa salidas por tipo; cola_analisis gestiona el BFS de objetivos.
         resultados_raw = {}
         cola_analisis = deque()
         procesados = set() # Evitar bucles
@@ -95,6 +97,7 @@ class AnalysisEngine:
             procesados.add(key)
             
             # --- EJECUCIÓN DEL ANÁLISIS ---
+            # Ejecutar el servicio específico para cada item
             resultado_item = await self._analizar_item(tipo, valor, item.get('es_archivo', False))
             
             # Guardar en resultados
@@ -119,7 +122,7 @@ class AnalysisEngine:
                         })
 
         # 4. Enriquecimiento Global (CTI, Vysion) sobre el objetivo principal
-        # Restricción: Menciones web y leaks solo para user, domain, ip, email, company
+        # allowed_vysion define tipos donde se consulta Vysion a nivel global (incluye wallet).
         allowed_vysion = ['user', 'domain', 'ip', 'email', 'company', 'wallet']
         if tipo_inicial not in ['image', 'document']:
             cti_global = self.servicios['cti'].verificar_agente_malicioso(objetivo_inicial)
@@ -200,14 +203,14 @@ class AnalysisEngine:
                 ph_res = self.servicios['phone'].analizar(valor)
                 svc_res = ph_res
             elif tipo == 'discord':
-                if 'discord.gg' in valor or 'discordapp.com/invite' in valor:
-                    dc = self.servicios['discord'].analizar_invitacion(valor)
-                elif valor.isdigit():
+                # Solo usuario (ID o nombre). La invitación ya no se analiza.
+                if valor.isdigit():
                     dc = self.servicios['discord'].analizar_usuario_id(valor)
                 else:
                     dc = self.servicios['discord'].analizar_usuario(valor)
                 svc_res = dc
             elif tipo == 'wallet':
+                # Validación sintáctica de wallet y resumen de exposición OSINT (Vysion).
                 wl_res = self.servicios['wallet'].analizar(valor)
                 try:
                     vy_res = self.servicios['vysion'].analizar(valor)
@@ -218,6 +221,7 @@ class AnalysisEngine:
                 hits = vy_datos.get('hits', []) or []
                 leaks_total = (vy_datos.get('leaks', {}) or {}).get('total', 0)
                 menciones = len(hits)
+                # Riesgo de wallet: se eleva a ALTO si hay menciones vinculadas a ransomware conocidos.
                 riesgo = "BAJO"
                 try:
                     RANS_KEYS = [
