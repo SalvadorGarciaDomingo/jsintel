@@ -25,6 +25,14 @@ class AIAnalysisResponse(BaseModel):
     exito: bool
     analisis: str
     riesgo: str
+ 
+class AIChatRequest(BaseModel):
+    question: str
+    context: Dict[str, Any] = {}
+ 
+class AIChatResponse(BaseModel):
+    exito: bool
+    respuesta: str
 
 class CheckURLRequest(BaseModel):
     url: str

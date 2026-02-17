@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from backend_api.models.api_models import AIAnalysisRequest, AIAnalysisResponse
+from backend_api.models.api_models import AIAnalysisRequest, AIAnalysisResponse, AIChatRequest, AIChatResponse
 from backend_api.core.ai_client import AIIdentityAnalyst
 import json
 
@@ -51,3 +51,17 @@ def build_osint_summary(data: dict) -> str:
         if leaks:
             parts.append(f"Vysion leaks: {leaks.get('total', 0)}")
     return "\n".join(parts)
+
+@router.post("/chat", response_model=AIChatResponse)
+async def chat_with_ai(request: AIChatRequest):
+    try:
+        analyst = AIIdentityAnalyst()
+        contexto = request.context or {}
+        pregunta = request.question
+        res = analyst.chatear(contexto, pregunta)
+        if isinstance(res, dict) and "respuesta" in res:
+            return AIChatResponse(exito=True, respuesta=str(res["respuesta"]))
+        # Fallback: stringify any JSON-style response
+        return AIChatResponse(exito=True, respuesta=json.dumps(res, ensure_ascii=False))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
