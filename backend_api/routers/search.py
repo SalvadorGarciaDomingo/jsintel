@@ -16,10 +16,12 @@ async def perform_search(request: SearchRequest):
         engine = AnalysisEngine(max_depth=2) # Profundidad de pivots configurable
         search_id = str(uuid.uuid4())
         
-        # Detección de tipo si no llega (heurística simple)
+        # Detección/normalización de tipo si no llega (heurística simple)
         tipo = request.tipo
         if tipo == "crypto":
             tipo = "wallet"  # Normalización de 'crypto' -> 'wallet'
+        elif tipo in ["username", "alias", "usuario", "user/alias", "user_alias"]:
+            tipo = "user"  # Normalización de variantes -> 'user'
         if not tipo:
             objetivo = (request.objetivo or "").strip()
             objetivo_lower = objetivo.lower().strip()
