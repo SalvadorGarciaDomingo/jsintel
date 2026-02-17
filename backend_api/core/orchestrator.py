@@ -218,6 +218,25 @@ class AnalysisEngine:
                 hits = vy_datos.get('hits', []) or []
                 leaks_total = (vy_datos.get('leaks', {}) or {}).get('total', 0)
                 menciones = len(hits)
+                riesgo = "BAJO"
+                try:
+                    RANS_KEYS = [
+                        "wannacry","lockbit","conti","revil","maze","darkside","blackcat","alphv",
+                        "clop","cl0p","babuk","netwalker","ryuk","avaddon","doppelpaymer","sodinokibi",
+                        "hive","black basta","egregor","ragnarok","royal","play","noescape"
+                    ]
+                    def _txt(v): 
+                        return str(v or "").lower()
+                    for h in hits:
+                        grp = _txt(h.get('ransomwareGroup'))
+                        title = _txt((h.get('page') or {}).get('pageTitle'))
+                        url = _txt(((h.get('page') or {}).get('url') or {}).get('url'))
+                        host = _txt(((h.get('page') or {}).get('url') or {}).get('domainName'))
+                        if any(k in grp for k in RANS_KEYS) or any(k in title for k in RANS_KEYS) or any(k in url for k in RANS_KEYS) or any(k in host for k in RANS_KEYS):
+                            riesgo = "ALTO"
+                            break
+                except:
+                    riesgo = "BAJO"
                 svc_res = {
                     "exito": wl_res.get('exito', False),
                     "datos": {
@@ -225,7 +244,8 @@ class AnalysisEngine:
                         "vysion": {
                             "menciones": menciones,
                             "leaks": leaks_total
-                        }
+                        },
+                        "riesgo": riesgo
                     },
                     "error": wl_res.get('error')
                 }
