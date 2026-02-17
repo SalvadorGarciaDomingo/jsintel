@@ -48,11 +48,34 @@ async def perform_search(request: SearchRequest):
             tipo_inicial=tipo
         )
         
-        # Calculate aggregations or risk score here based on correlations
+        # Calculate aggregations or risk score here based on correlations + ransomware mentions
         risk_score = "BAJO"
         critical_count = sum(1 for c in correlaciones if c.get('nivel') in ['Alta', 'Crítica'])
-        if critical_count > 0: risk_score = "ALTO"
-        elif len(correlaciones) > 5: risk_score = "MEDIO"
+        # Ransomware detection from Vysion
+        ransom_flag = False
+        try:
+            v = resultados.get('vysion', {}).get('datos', {}) or {}
+            hits = v.get('hits', []) or []
+            RANS_KEYS = [
+                "wannacry","lockbit","conti","revil","maze","darkside","blackcat","alphv",
+                "clop","cl0p","babuk","netwalker","ryuk","avaddon","doppelpaymer","sodinokibi",
+                "hive","black basta","egregor","ragnarok","royal","play","noescape"
+            ]
+            def _txt(x): return str(x or "").lower()
+            for h in hits:
+                grp = _txt(h.get('ransomwareGroup'))
+                title = _txt((h.get('page') or {}).get('pageTitle'))
+                url = _txt(((h.get('page') or {}).get('url') or {}).get('url'))
+                host = _txt(((h.get('page') or {}).get('url') or {}).get('domainName'))
+                if any(k in grp for k in RANS_KEYS) or any(k in title for k in RANS_KEYS) or any(k in url for k in RANS_KEYS) or any(k in host for k in RANS_KEYS):
+                    ransom_flag = True
+                    break
+        except:
+            ransom_flag = False
+        if critical_count > 0 or ransom_flag:
+            risk_score = "ALTO"
+        elif len(correlaciones) > 5:
+            risk_score = "MEDIO"
 
         resultados["graph_data"] = graph_data
         return SearchResponse(
